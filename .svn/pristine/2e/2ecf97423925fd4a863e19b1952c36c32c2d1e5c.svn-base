@@ -1,0 +1,79 @@
+package com.taotao.service.impl;
+
+import java.util.Date;
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
+import com.taotao.common.pojo.EasyUIDataGridResult;
+import com.taotao.common.pojo.TaotaoResult;
+import com.taotao.common.utils.IDUtils;
+import com.taotao.mapper.TbItemDescMapper;
+import com.taotao.mapper.TbItemMapper;
+import com.taotao.pojo.TbItem;
+import com.taotao.pojo.TbItemDesc;
+import com.taotao.pojo.TbItemExample;
+import com.taotao.service.ItemService;
+@Service
+public class ItemServiceImpl implements ItemService {
+
+	@Autowired
+	private TbItemMapper itemMapper; 
+	
+	@Autowired
+	private TbItemDescMapper tbItemDescMapper;
+	
+	@Override
+	public TbItem getItemById(Long itemId) {
+		
+		TbItem tbItem = itemMapper.selectByPrimaryKey(itemId);
+		
+		return tbItem;
+	}
+
+	@Override
+	public EasyUIDataGridResult getItemList(int page, int rows) {
+		// TODO Auto-generated method stub
+		TbItemExample example = new TbItemExample() ;
+		//设置分页
+		PageHelper.startPage(page, rows);
+		
+		List<TbItem> list = itemMapper.selectByExample(example) ;
+		//取分页后的结果
+		PageInfo<TbItem> pageInfo = new PageInfo<>(list);
+		EasyUIDataGridResult result = new EasyUIDataGridResult() ;
+		result.setTotal(pageInfo.getTotal());
+		result.setRows(list);
+		return result;
+	}
+
+	@Override
+	public TaotaoResult createItem(TbItem item, String desc) {
+		
+		//生成商品ID
+		long itemId = IDUtils.genItemId();
+		item.setId(itemId);
+		//1=正常；2=下架；3=删除
+		item.setStatus((byte)1);
+		Date date = new Date() ;
+		item.setCreated(date);
+		item.setUpdated(date);
+		System.out.println("service-item:" + item);
+		//插入商品表
+		itemMapper.insert(item);
+		 
+		
+		//商品描述表
+		TbItemDesc tbItemDesc = new TbItemDesc() ;
+		tbItemDesc.setItemDesc(desc);
+		tbItemDesc.setItemId(itemId);
+		tbItemDesc.setUpdated(date);
+		tbItemDesc.setCreated(date);
+		tbItemDescMapper.insert(tbItemDesc);
+		return TaotaoResult.ok();
+	}
+
+}
